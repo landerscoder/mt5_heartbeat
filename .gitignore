@@ -1,0 +1,4 @@
+.venv
+.vscode
+.nicegui
+app/_pycache_

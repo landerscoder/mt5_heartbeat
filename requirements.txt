@@ -1,0 +1,3 @@
+ex4nicegui
+fastapi-users[sqlalchemy]
+aiosqlite

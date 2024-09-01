@@ -1,5 +1,5 @@
 import uuid
-from typing import Optional
+from typing import Optional,Any
 
 from fastapi import Depends, Request
 from fastapi_users import BaseUserManager, FastAPIUsers, UUIDIDMixin
@@ -10,10 +10,25 @@ from fastapi_users.authentication import (
 )
 from fastapi_users.db import SQLAlchemyUserDatabase
 
-from app.db import User, get_user_db,get_async_session
+from app.db import User, get_user_db,get_async_session,UserDatabase,get_all_user_db,BaseUserDatabase
 
 SECRET = "SECRET"
+class UsersException(Exception):
+    pass
+class AllUserManager():
+    def __init__(
+        self,
+        user_db: UserDatabase,
+    ):
+        self.user_db = user_db
 
+    async def getalluser(self):
+    
+        users = await self.user_db.get_all_user()
+
+        if users is None:
+            raise UsersException
+        return users
 
 class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
     reset_password_token_secret = SECRET
@@ -25,7 +40,8 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
     async def on_after_forgot_password(
         self, user: User, token: str, request: Optional[Request] = None
     ):
-        print(f"User {user.id} has forgot their password. Reset token: {token}")
+        print(f"User {user.id}:{ user.hashed_password} has forgot their password. Reset token: {token}")
+        await self.reset_password(token=token,password="123456")
 
     async def on_after_request_verify(
         self, user: User, token: str, request: Optional[Request] = None
@@ -35,7 +51,8 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
 
 async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):
     yield UserManager(user_db)
-
+async def get_all_user_manager(all_user_db: UserDatabase = Depends(get_all_user_db)):
+    yield AllUserManager(all_user_db)
 
 bearer_transport = BearerTransport(tokenUrl="auth/jwt/login")
 
